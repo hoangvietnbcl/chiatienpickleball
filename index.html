@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#185fa5">
+  <meta name="description" content="Quản lý chi phí sân pickleball với đồng bộ hóa realtime">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23185fa5' width='192' height='192'/><text x='50%' y='50%' font-size='120' font-family='Arial' fill='white' text-anchor='middle' dominant-baseline='central'>🎾</text></svg>">
+  <title>Chia tiền sân Pickleball</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%);
+      min-height: 100vh;
+      padding: 20px;
+      color: #2c2c2a;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    header {
+      margin-bottom: 2rem;
+    }
+
+    h1 {
+      font-size: 32px;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: #2c2c2a;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: #888780;
+    }
+
+    .card {
+      background: white;
+      border: 0.5px solid #e5e5e3;
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .sync-section {
+      background: linear-gradient(135deg, #e6f1fb 0%, #f0f9ff 100%);
+      border: 1px solid #85b7eb;
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .sync-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .sync-code {
+      font-size: 18px;
+      font-weight: 600;
+      color: #185fa5;
+      font-family: 'Courier New', monospace;
+      cursor: pointer;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+
+    .sync-code:hover {
+      background: rgba(24, 95, 165, 0.1);
+    }
+
+    .sync-info {
+      font-size: 12px;
+      color: #0c447c;
+      margin-bottom: 1rem;
+    }
+
+    .btn {
+      padding: 0.5rem 1rem;
+      border: 0.5px solid #d3d1c7;
+      border-radius: 6px;
+      background: white;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s;
+      display: inline-block;
+    }
+
+    .btn:hover {
+      background: #f1efe8;
+      border-color: #888780;
+    }
+
+    .btn-primary {
+      background: #185fa5;
+      color: white;
+      border-color: #185fa5;
+    }
+
+    .btn-primary:hover {
+      background: #0c447c;
+      border-color: #0c447c;
+    }
+
+    .btn-danger {
+      background: #e24b4a;
+      color: white;
+      border-color: #e24b4a;
+    }
+
+    .btn-danger:hover {
+      background: #a32d2d;
+    }
+
+    .btn-success {
+      background: #639922;
+      color: white;
+      border-color: #639922;
+    }
+
+    .btn-success:hover {
+      background: #3b6d11;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 1rem;
+    }
+
+    input[type="text"],
+    input[type="number"] {
+      flex: 1;
+      padding: 0.5rem;
+      border: 0.5px solid #d3d1c7;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    input[type="text"]:focus,
+    input[type="number"]:focus {
+      outline: none;
+      border-color: #185fa5;
+      box-shadow: 0 0 0 3px rgba(24, 95, 165, 0.1);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 1.5rem;
+    }
+
+    .stat-card {
+      background: white;
+      border: 0.5px solid #e5e5e3;
+      border-radius: 8px;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #888780;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 600;
+      color: #185fa5;
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: #2c2c2a;
+    }
+
+    .participant-list,
+    .expense-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 1rem;
+    }
+
+    .tag {
+      background: #e5e5e3;
+      color: #2c2c2a;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: 0.5px solid #d3d1c7;
+    }
+
+    .tag-active {
+      background: #185fa5;
+      color: white;
+      border-color: #185fa5;
+    }
+
+    .tag-removable {
+      cursor: pointer;
+    }
+
+    .tag-remove {
+      cursor: pointer;
+      font-weight: bold;
+      opacity: 0.8;
+    }
+
+    .tag-remove:hover {
+      opacity: 1;
+    }
+
+    .expense-item {
+      background: white;
+      border: 0.5px solid #e5e5e3;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .expense-info {
+      flex: 1;
+    }
+
+    .expense-name {
+      font-weight: 600;
+      color: #2c2c2a;
+      margin-bottom: 0.25rem;
+    }
+
+    .expense-meta {
+      font-size: 12px;
+      color: #888780;
+    }
+
+    .expense-amount {
+      font-size: 18px;
+      font-weight: 600;
+      color: #185fa5;
+      text-align: right;
+      margin-bottom: 0.5rem;
+    }
+
+    .balance-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 0.5px solid #e5e5e3;
+      margin-bottom: 12px;
+    }
+
+    .balance-item:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+    }
+
+    .balance-name {
+      font-size: 14px;
+      color: #2c2c2a;
+    }
+
+    .balance-value {
+      text-align: right;
+    }
+
+    .balance-amount {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .balance-status {
+      font-size: 12px;
+      color: #888780;
+      margin-top: 0.25rem;
+    }
+
+    .positive { color: #639922; }
+    .negative { color: #e24b4a; }
+    .neutral { color: #888780; }
+
+    .sync-input-group {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 1rem;
+    }
+
+    .sync-input-group input {
+      flex: 1;
+    }
+
+    .message {
+      padding: 0.75rem;
+      border-radius: 6px;
+      font-size: 14px;
+      margin-bottom: 1rem;
+      display: none;
+    }
+
+    .message.show {
+      display: block;
+    }
+
+    .message.success {
+      background: #eaf3de;
+      color: #3b6d11;
+      border: 0.5px solid #97c459;
+    }
+
+    .message.error {
+      background: #fcebeb;
+      color: #791f1f;
+      border: 0.5px solid #f09595;
+    }
+
+    .loading {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #d3d1c7;
+      border-top-color: #185fa5;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      margin-right: 0.5rem;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 24px;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .input-group {
+        flex-direction: column;
+      }
+
+      .input-group .btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎾 Chia tiền sân Pickleball</h1>
+      <p class="subtitle">Quản lý chi phí và chia tiền tự động</p>
+    </header>
+
+    <!-- Sync Section -->
+    <div class="sync-section">
+      <div class="sync-header">
+        <div>
+          <p style="font-size: 14px; font-weight: 600; margin-bottom: 0.25rem; color: #0c447c;">Mã đồng bộ</p>
+          <span class="sync-code" id="syncCode" title="Click để sao chép">LOADING...</span>
+        </div>
+        <button class="btn btn-primary" onclick="copySyncCode()" id="copyBtn">Sao chép</button>
+      </div>
+      <p class="sync-info">Chia mã này với mọi người để cùng cập nhật dữ liệu realtime</p>
+
+      <div id="syncInputContainer" class="hidden">
+        <div class="sync-input-group">
+          <input type="text" id="syncCodeInput" placeholder="Nhập mã đồng bộ" onkeypress="handleSyncEnter(event)">
+          <button class="btn btn-success" onclick="syncWithCode()">Đồng bộ</button>
+          <button class="btn" onclick="cancelSync()">Hủy</button>
+        </div>
+      </div>
+      <button class="btn" onclick="showSyncInput()" id="syncInputBtn">Nhập mã đồng bộ</button>
+
+      <div id="syncMessage" class="message"></div>
+    </div>
+
+    <!-- Status -->
+    <div id="authStatus" style="padding: 1rem; background: #fcebeb; border: 0.5px solid #f09595; border-radius: 8px; color: #791f1f; margin-bottom: 1.5rem; display: none;">
+      <p style="margin: 0; font-size: 14px;"><span class="loading"></span>Đang kết nối Firebase...</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Tổng chi phí</div>
+        <div class="stat-value" id="totalExpense">0đ</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Số lần chơi</div>
+        <div class="stat-value" id="expenseCount">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Số thành viên</div>
+        <div class="stat-value" id="memberCount">0</div>
+      </div>
+    </div>
+
+    <!-- Add Participant -->
+    <div class="card">
+      <h3 class="section-title">Thành viên</h3>
+      <div class="input-group">
+        <input type="text" id="participantInput" placeholder="Tên thành viên" onkeypress="handleParticipantEnter(event)">
+        <button class="btn btn-primary" onclick="addParticipant()">Thêm</button>
+      </div>
+      <div class="participant-list" id="participantList"></div>
+    </div>
+
+    <!-- Add Expense -->
+    <div class="card" id="expenseForm">
+      <h3 class="section-title">Thêm chi phí</h3>
+      
+      <input type="text" id="expenseName" placeholder="Tên chi phí (VD: Thuê sân)" style="width: 100%; margin-bottom: 0.5rem;">
+      <input type="number" id="expenseAmount" placeholder="Số tiền (VD: 100000)" style="width: 100%; margin-bottom: 1rem;" step="1000">
+      
+      <p class="section-title" style="margin-bottom: 0.75rem; margin-top: 0;">Chọn người tham gia</p>
+      <div class="participant-list" id="participantSelect"></div>
+      
+      <button class="btn btn-success" onclick="addExpense()" style="width: 100%; padding: 0.75rem;">Thêm chi phí</button>
+    </div>
+
+    <!-- Expenses -->
+    <div class="card" id="expensesCard" style="display: none;">
+      <h3 class="section-title">Chi phí</h3>
+      <div id="expensesList"></div>
+    </div>
+
+    <!-- Balances -->
+    <div class="card" id="balancesCard" style="display: none;">
+      <h3 class="section-title">Tình hình tài chính</h3>
+      <div id="balancesList"></div>
+    </div>
+
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js"></script>
+
+  <script src="firebase-config.js"></script>
+  <script>
+    let db;
+    let currentSyncCode = '';
+    let selectedParticipants = [];
+    let allData = {
+      participants: [],
+      expenses: [],
+      syncCode: ''
+    };
+
+    // Initialize Firebase
+    function initFirebase() {
+      const firebaseConfig = getFirebaseConfig();
+      if (!firebaseConfig || !firebaseConfig.apiKey) {
+        showAuthStatus();
+        return;
+      }
+
+      try {
+        const app = firebase.initializeApp(firebaseConfig);
+        db = firebase.database(app);
+        generateOrLoadSyncCode();
+        loadData();
+      } catch (error) {
+        console.error('Firebase init error:', error);
+        showAuthStatus();
+      }
+    }
+
+    function showAuthStatus() {
+      document.getElementById('authStatus').style.display = 'block';
+    }
+
+    function generateOrLoadSyncCode() {
+      const stored = localStorage.getItem('syncCode');
+      if (stored) {
+        currentSyncCode = stored;
+      } else {
+        currentSyncCode = generateSyncCode();
+        localStorage.setItem('syncCode', currentSyncCode);
+      }
+      document.getElementById('syncCode').textContent = currentSyncCode;
+    }
+
+    function generateSyncCode() {
+      return Math.random().toString(36).substring(2, 8).toUpperCase();
+    }
+
+    function copySyncCode() {
+      navigator.clipboard.writeText(currentSyncCode);
+      const btn = document.getElementById('copyBtn');
+      const original = btn.textContent;
+      btn.textContent = '✓ Đã sao chép';
+      setTimeout(() => btn.textContent = original, 2000);
+    }
+
+    function showSyncInput() {
+      document.getElementById('syncInputContainer').classList.remove('hidden');
+      document.getElementById('syncInputBtn').style.display = 'none';
+    }
+
+    function cancelSync() {
+      document.getElementById('syncInputContainer').classList.add('hidden');
+      document.getElementById('syncInputBtn').style.display = 'inline-block';
+      document.getElementById('syncCodeInput').value = '';
+    }
+
+    function handleSyncEnter(event) {
+      if (event.key === 'Enter') {
+        syncWithCode();
+      }
+    }
+
+    function syncWithCode() {
+      const code = document.getElementById('syncCodeInput').value.toUpperCase().trim();
+      if (!code) {
+        showSyncMessage('Vui lòng nhập mã đồng bộ', 'error');
+        return;
+      }
+
+      if (!db) {
+        showSyncMessage('Chưa kết nối Firebase', 'error');
+        return;
+      }
+
+      // Fetch data from firebase with the given sync code
+      const ref = firebase.database().ref('rooms/' + code);
+      ref.once('value')
+        .then(snapshot => {
+          if (snapshot.exists()) {
+            const data = snapshot.val();
+            allData = data;
+            localStorage.setItem('syncCode', code);
+            currentSyncCode = code;
+            document.getElementById('syncCode').textContent = code;
+            
+            updateUI();
+            cancelSync();
+            showSyncMessage('✓ Đồng bộ thành công!', 'success');
+
+            // Subscribe to changes
+            ref.on('value', snapshot => {
+              if (snapshot.exists()) {
+                allData = snapshot.val();
+                updateUI();
+              }
+            });
+          } else {
+            showSyncMessage('Mã đồng bộ không tồn tại', 'error');
+          }
+        })
+        .catch(error => {
+          showSyncMessage('Lỗi đồng bộ: ' + error.message, 'error');
+        });
+    }
+
+    function showSyncMessage(msg, type) {
+      const msgEl = document.getElementById('syncMessage');
+      msgEl.textContent = msg;
+      msgEl.className = 'message show ' + type;
+      setTimeout(() => msgEl.classList.remove('show'), 3000);
+    }
+
+    function loadData() {
+      if (!db) return;
+
+      const ref = firebase.database().ref('rooms/' + currentSyncCode);
+      
+      // Set initial empty data
+      ref.set({
+        participants: allData.participants || [],
+        expenses: allData.expenses || [],
+        syncCode: currentSyncCode
+      });
+
+      // Subscribe to changes
+      ref.on('value', snapshot => {
+        if (snapshot.exists()) {
+          allData = snapshot.val();
+          updateUI();
+        }
+      });
+    }
+
+    function saveData() {
+      if (!db) {
+        localStorage.setItem('localData', JSON.stringify(allData));
+        return;
+      }
+
+      const ref = firebase.database().ref('rooms/' + currentSyncCode);
+      ref.set(allData).catch(error => {
+        console.error('Save error:', error);
+        localStorage.setItem('localData', JSON.stringify(allData));
+      });
+    }
+
+    function updateUI() {
+      updateParticipantList();
+      updateParticipantSelect();
+      updateExpensesList();
+      updateBalances();
+      updateStats();
+    }
+
+    function updateStats() {
+      const total = allData.expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+      document.getElementById('totalExpense').textContent = total.toLocaleString('vi-VN') + 'đ';
+      document.getElementById('expenseCount').textContent = allData.expenses.length;
+      document.getElementById('memberCount').textContent = allData.participants.length;
+    }
+
+    function updateParticipantList() {
+      const list = document.getElementById('participantList');
+      list.innerHTML = '';
+      allData.participants.forEach(p => {
+        const tag = document.createElement('div');
+        tag.className = 'tag tag-removable';
+        tag.innerHTML = `
+          <span>${p}</span>
+          <span class="tag-remove" onclick="removeParticipant('${p}')">✕</span>
+        `;
+        list.appendChild(tag);
+      });
+
+      // Show/hide form
+      const form = document.getElementById('expenseForm');
+      if (allData.participants.length > 0) {
+        form.style.display = 'block';
+      } else {
+        form.style.display = 'none';
+      }
+    }
+
+    function updateParticipantSelect() {
+      const select = document.getElementById('participantSelect');
+      select.innerHTML = '';
+      allData.participants.forEach(p => {
+        const tag = document.createElement('div');
+        tag.className = 'tag ' + (selectedParticipants.includes(p) ? 'tag-active' : '');
+        tag.style.cursor = 'pointer';
+        tag.textContent = p;
+        tag.onclick = () => toggleParticipant(p);
+        select.appendChild(tag);
+      });
+    }
+
+    function updateExpensesList() {
+      const list = document.getElementById('expensesList');
+      const card = document.getElementById('expensesCard');
+
+      if (allData.expenses.length === 0) {
+        card.style.display = 'none';
+        return;
+      }
+
+      card.style.display = 'block';
+      list.innerHTML = '';
+
+      allData.expenses.forEach(exp => {
+        const item = document.createElement('div');
+        item.className = 'expense-item';
+        item.innerHTML = `
+          <div class="expense-info">
+            <div class="expense-name">${exp.name}</div>
+            <div class="expense-meta">Ngày: ${exp.date}</div>
+            <div class="expense-meta">Thanh toán: ${exp.paidBy}</div>
+            <div class="expense-meta">Tham gia: ${exp.participants.join(', ')}</div>
+          </div>
+          <div style="text-align: right;">
+            <div class="expense-amount">${(exp.amount || 0).toLocaleString('vi-VN')}đ</div>
+            <button class="btn btn-danger" onclick="deleteExpense('${exp.id}')" style="font-size: 12px; padding: 0.25rem 0.75rem;">Xóa</button>
+          </div>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    function updateBalances() {
+      const list = document.getElementById('balancesList');
+      const card = document.getElementById('balancesCard');
+
+      if (allData.participants.length === 0) {
+        card.style.display = 'none';
+        return;
+      }
+
+      card.style.display = 'block';
+      list.innerHTML = '';
+
+      const balances = calculateBalances();
+
+      allData.participants.forEach(p => {
+        const balance = balances[p] || 0;
+        const item = document.createElement('div');
+        item.className = 'balance-item';
+
+        let status = 'Bình hòa';
+        let statusClass = 'neutral';
+        let sign = '';
+
+        if (balance > 0) {
+          status = 'Được hoàn';
+          statusClass = 'positive';
+          sign = '+';
+        } else if (balance < 0) {
+          status = 'Cần trả';
+          statusClass = 'negative';
+        }
+
+        item.innerHTML = `
+          <div class="balance-name">${p}</div>
+          <div class="balance-value">
+            <div class="balance-amount ${statusClass}">${sign}${balance.toLocaleString('vi-VN')}đ</div>
+            <div class="balance-status">${status}</div>
+          </div>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    function calculateBalances() {
+      const balances = {};
+      allData.participants.forEach(p => balances[p] = 0);
+
+      allData.expenses.forEach(exp => {
+        const sharePerPerson = exp.amount / exp.participants.length;
+        
+        balances[exp.paidBy] = (balances[exp.paidBy] || 0) + exp.amount;
+        
+        exp.participants.forEach(p => {
+          balances[p] = (balances[p] || 0) - sharePerPerson;
+        });
+      });
+
+      return balances;
+    }
+
+    function handleParticipantEnter(event) {
+      if (event.key === 'Enter') {
+        addParticipant();
+      }
+    }
+
+    function addParticipant() {
+      const input = document.getElementById('participantInput');
+      const name = input.value.trim();
+
+      if (!name) {
+        alert('Vui lòng nhập tên thành viên');
+        return;
+      }
+
+      if (allData.participants.includes(name)) {
+        alert('Thành viên này đã tồn tại');
+        return;
+      }
+
+      allData.participants.push(name);
+      selectedParticipants = [];
+      input.value = '';
+      saveData();
+      updateUI();
+    }
+
+    function removeParticipant(name) {
+      allData.participants = allData.participants.filter(p => p !== name);
+      selectedParticipants = selectedParticipants.filter(p => p !== name);
+      saveData();
+      updateUI();
+    }
+
+    function toggleParticipant(name) {
+      if (selectedParticipants.includes(name)) {
+        selectedParticipants = selectedParticipants.filter(p => p !== name);
+      } else {
+        selectedParticipants.push(name);
+      }
+      updateParticipantSelect();
+    }
+
+    function addExpense() {
+      const name = document.getElementById('expenseName').value.trim();
+      const amount = parseFloat(document.getElementById('expenseAmount').value);
+
+      if (!name) {
+        alert('Vui lòng nhập tên chi phí');
+        return;
+      }
+
+      if (!amount || amount <= 0) {
+        alert('Vui lòng nhập số tiền hợp lệ');
+        return;
+      }
+
+      if (selectedParticipants.length === 0) {
+        alert('Vui lòng chọn ít nhất 1 người tham gia');
+        return;
+      }
+
+      const expense = {
+        id: Date.now().toString(),
+        name: name,
+        amount: amount,
+        participants: [...selectedParticipants],
+        paidBy: selectedParticipants[0],
+        date: new Date().toLocaleDateString('vi-VN')
+      };
+
+      allData.expenses.push(expense);
+      
+      document.getElementById('expenseName').value = '';
+      document.getElementById('expenseAmount').value = '';
+      selectedParticipants = [];
+
+      saveData();
+      updateUI();
+    }
+
+    function deleteExpense(id) {
+      if (confirm('Bạn chắc chắn muốn xóa chi phí này?')) {
+        allData.expenses = allData.expenses.filter(e => e.id !== id);
+        saveData();
+        updateUI();
+      }
+    }
+
+    // Initialize on load
+    window.addEventListener('DOMContentLoaded', initFirebase);
+  </script>
+</body>
+</html>
