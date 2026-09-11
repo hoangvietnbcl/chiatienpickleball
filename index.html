@@ -265,6 +265,63 @@
       cursor: pointer;
     }
 
+    .tag-name {
+      cursor: pointer;
+    }
+
+    .share-stepper {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: rgba(255,255,255,0.25);
+      border-radius: 12px;
+      padding: 0.15rem 0.35rem;
+    }
+
+    .share-btn {
+      background: rgba(255,255,255,0.9);
+      border: none;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      font-size: 13px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #185fa5;
+      font-weight: 700;
+      padding: 0;
+    }
+
+    .share-btn:hover {
+      background: white;
+    }
+
+    .share-count {
+      min-width: 14px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .share-hint {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-top: 0.5rem;
+    }
+
+    .expense-thumb {
+      width: 56px;
+      height: 56px;
+      border-radius: 8px;
+      object-fit: cover;
+      margin-right: 1rem;
+      flex-shrink: 0;
+      border: 1px solid #e5e7eb;
+    }
+
     /* Stats */
     .stats-grid {
       display: grid;
@@ -952,6 +1009,7 @@
           <div>
             <p style="font-size: 13px; font-weight: 600; color: #6b7280; margin-bottom: 0.75rem;">Chọn người tham gia:</p>
             <div class="tag-list" id="participantSelect"></div>
+            <p class="share-hint">💡 Ai đó dẫn theo khách mời? Bấm vào nút + trên tag của họ để tính thêm 1-2 phần.</p>
           </div>
           <button class="btn btn-success" onclick="addExpense()" style="width: 100%;">💾 Thêm Chi Phí</button>
         </div>
@@ -966,11 +1024,17 @@
     <!-- Tab 5: Bill -->
     <div id="bill" class="tab-content">
       <div class="card" id="billUploadCard" style="display: none;">
-        <div class="card-title">📸 Upload Bill</div>
+        <div class="card-title">📸 Chụp / Upload Bill</div>
         <div class="form-group-full">
-          <input type="file" id="billImage" accept="image/*">
+          <input type="file" id="billImage" accept="image/*" capture="environment">
+          <input type="text" id="billExpenseName" placeholder="Tên chi phí (VD: Ăn tối sau trận)">
           <input type="number" id="billAmount" placeholder="Số tiền từ bill" step="1000">
-          <button class="btn btn-primary" onclick="uploadBill()" style="width: 100%;">📤 Upload</button>
+          <div>
+            <p style="font-size: 13px; font-weight: 600; color: #6b7280; margin-bottom: 0.75rem;">Chọn người tham gia:</p>
+            <div class="tag-list" id="billParticipantSelect"></div>
+            <p class="share-hint">💡 Ai đó dẫn theo khách mời? Bấm vào nút + trên tag của họ để tính thêm 1-2 phần.</p>
+          </div>
+          <button class="btn btn-primary" onclick="uploadBill()" style="width: 100%;">📤 Lưu Bill & Chia Tiền</button>
         </div>
       </div>
     </div>
@@ -1063,7 +1127,7 @@
 
     let db;
     let currentSyncCode = '';
-    let selectedParticipants = [];
+    let shareState = { expense: {}, bill: {} }; // { name: soPhan }, hỗ trợ khách mời (nhiều phần)
     let chartFund, chartExpense;
     let roomListener = null;
     let myGroups = [];
@@ -1377,7 +1441,8 @@
       updateMembers();
       updateFundList();
       updateStats();
-      updateParticipantSelect();
+      renderSharePicker('expense');
+      renderSharePicker('bill');
       updateFundMemberSelect();
       updateExpensesList();
       updateHistoryList();
@@ -1472,8 +1537,8 @@
           item.className = 'list-item';
           item.innerHTML = `
             <div class="list-item-info">
-              <div class="list-item-name">${exp.name}</div>
-              <div class="list-item-meta">👥 ${exp.participants.join(', ')}</div>
+              <div class="list-item-name">${escapeHtml(exp.name)}</div>
+              <div class="list-item-meta">👥 ${formatParticipantsList(exp.participants)}</div>
               <div class="list-item-meta">📅 ${exp.date}</div>
             </div>
             <div class="list-item-amount">${exp.amount.toLocaleString('vi-VN')}đ</div>
@@ -1483,16 +1548,71 @@
       }
     }
 
-    function updateParticipantSelect() {
-      const select = document.getElementById('participantSelect');
-      select.innerHTML = '';
+    // Bộ chọn người tham gia + số phần (hỗ trợ khách mời trả 2-3 phần)
+    // scope: 'expense' (tab Ghi Chi Phí) hoặc 'bill' (tab Bill)
+    function renderSharePicker(scope) {
+      const containerId = scope === 'expense' ? 'participantSelect' : 'billParticipantSelect';
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      const state = shareState[scope];
+      container.innerHTML = '';
       allData.participants.forEach(p => {
+        const selected = !!state[p];
         const tag = document.createElement('div');
-        tag.className = 'tag ' + (selectedParticipants.includes(p) ? 'tag-selected' : '');
-        tag.textContent = p;
-        tag.onclick = () => toggleParticipant(p);
-        select.appendChild(tag);
+        tag.className = 'tag' + (selected ? ' tag-selected' : '');
+        if (selected) {
+          tag.innerHTML = `
+            <span class="tag-name" onclick="toggleShareParticipant('${scope}','${p}')">${escapeHtml(p)}</span>
+            <span class="share-stepper">
+              <button type="button" class="share-btn" onclick="event.stopPropagation(); changeShareCount('${scope}','${p}',-1)">−</button>
+              <span class="share-count">${state[p]}</span>
+              <button type="button" class="share-btn" onclick="event.stopPropagation(); changeShareCount('${scope}','${p}',1)">+</button>
+            </span>
+          `;
+        } else {
+          tag.textContent = p;
+          tag.onclick = () => toggleShareParticipant(scope, p);
+        }
+        container.appendChild(tag);
       });
+    }
+
+    function toggleShareParticipant(scope, name) {
+      const state = shareState[scope];
+      if (state[name]) {
+        delete state[name];
+      } else {
+        state[name] = 1;
+      }
+      renderSharePicker(scope);
+    }
+
+    function changeShareCount(scope, name, delta) {
+      const state = shareState[scope];
+      if (!state[name]) return;
+      state[name] = Math.min(6, Math.max(1, state[name] + delta));
+      renderSharePicker(scope);
+    }
+
+    function formatParticipantsList(participants) {
+      if (!Array.isArray(participants)) return '';
+      return participants.map(p => {
+        if (typeof p === 'string') return p; // dữ liệu cũ (chưa có khách mời)
+        return p.shares > 1 ? `${p.name} (x${p.shares})` : p.name;
+      }).join(', ');
+    }
+
+    function formatShareInfo(exp) {
+      if (typeof exp.perShare === 'number' && Array.isArray(exp.participants)) {
+        const totalShares = exp.totalShares || exp.participants.length;
+        const extra = totalShares > exp.participants.length ? ` • Tổng ${totalShares} phần` : '';
+        return `💵 ${exp.perShare.toLocaleString('vi-VN')}đ/phần${extra}`;
+      }
+      // dữ liệu cũ chưa có shares
+      if (Array.isArray(exp.participants) && exp.participants.length > 0) {
+        return `💵 ${(exp.amount / exp.participants.length).toLocaleString('vi-VN')}đ/người`;
+      }
+      return '';
     }
 
     function updateFundMemberSelect() {
@@ -1516,11 +1636,12 @@
         const item = document.createElement('div');
         item.className = 'list-item';
         item.innerHTML = `
+          ${exp.image ? `<img src="${exp.image}" alt="bill" class="expense-thumb">` : ''}
           <div class="list-item-info">
-            <div class="list-item-name">${exp.name}</div>
+            <div class="list-item-name">${escapeHtml(exp.name)}</div>
             <div class="list-item-meta">📅 ${exp.date}</div>
-            <div class="list-item-meta">👥 ${exp.participants.join(', ')}</div>
-            <div class="list-item-meta">💵 ${(exp.amount / exp.participants.length).toLocaleString('vi-VN')}đ/người</div>
+            <div class="list-item-meta">👥 ${formatParticipantsList(exp.participants)}</div>
+            <div class="list-item-meta">${formatShareInfo(exp)}</div>
           </div>
           <div style="text-align: right;">
             <div class="list-item-amount">${exp.amount.toLocaleString('vi-VN')}đ</div>
@@ -1540,11 +1661,13 @@
         div.className = 'history-item';
         let text = '';
         if (item.type === 'expense') {
-          text = `💰 ${item.name}: ${item.amount.toLocaleString('vi-VN')}đ`;
+          const who = item.participants ? ` (${item.participants.join(', ')})` : '';
+          text = `💰 ${item.name}: ${item.amount.toLocaleString('vi-VN')}đ${who}`;
         } else if (item.type === 'fund') {
           text = `➕ ${item.member}: +${item.amount.toLocaleString('vi-VN')}đ`;
         } else if (item.type === 'bill') {
-          text = `📸 Bill: ${item.amount.toLocaleString('vi-VN')}đ`;
+          const who = item.participants ? ` (${item.participants.join(', ')})` : '';
+          text = `📸 ${item.name || 'Bill'}: ${item.amount.toLocaleString('vi-VN')}đ${who}`;
         }
         div.innerHTML = `<div class="history-time">${item.date}</div><div class="history-text">${text}</div>`;
         list.appendChild(div);
@@ -1559,7 +1682,7 @@
         item.className = 'bill-item';
         item.innerHTML = `
           <img src="${bill.image}" alt="bill">
-          <div class="bill-info">${bill.amount.toLocaleString('vi-VN')}đ</div>
+          <div class="bill-info">${bill.name ? escapeHtml(bill.name) + ' • ' : ''}${bill.amount.toLocaleString('vi-VN')}đ</div>
         `;
         gallery.appendChild(item);
       });
@@ -1655,58 +1778,75 @@
       if (confirm(`Xóa ${name}?`)) {
         allData.participants = allData.participants.filter(p => p !== name);
         delete allData.funds[name];
+        delete shareState.expense[name];
+        delete shareState.bill[name];
         saveData();
         updateUI();
       }
-    }
-
-    function toggleParticipant(name) {
-      selectedParticipants = selectedParticipants.includes(name)
-        ? selectedParticipants.filter(p => p !== name)
-        : [...selectedParticipants, name];
-      updateParticipantSelect();
     }
 
     function addExpense() {
       const name = document.getElementById('expenseName').value.trim();
       const amount = parseFloat(document.getElementById('expenseAmount').value);
+      const state = shareState.expense;
+      const names = Object.keys(state);
+
       if (!name) { alert('Nhập tên'); return; }
       if (!amount || amount <= 0) { alert('Nhập tiền'); return; }
-      if (selectedParticipants.length === 0) { alert('Chọn người'); return; }
+      if (names.length === 0) { alert('Chọn người'); return; }
 
-      const share = amount / selectedParticipants.length;
+      const totalShares = names.reduce((s, n) => s + state[n], 0);
+      const perShare = amount / totalShares;
+      const participantsDetail = names.map(n => ({
+        name: n,
+        shares: state[n],
+        amount: perShare * state[n]
+      }));
+
       allData.expenses.push({
         id: Date.now().toString(),
         name, amount,
-        participants: [...selectedParticipants],
-        sharePerPerson: share,
+        participants: participantsDetail,
+        totalShares,
+        perShare,
         date: new Date().toLocaleDateString('vi-VN')
       });
 
-      selectedParticipants.forEach(p => {
-        allData.funds[p] = (allData.funds[p] || 0) - share;
+      participantsDetail.forEach(pd => {
+        allData.funds[pd.name] = (allData.funds[pd.name] || 0) - pd.amount;
       });
 
       allData.history.push({
         id: Date.now() + '',
         type: 'expense', name, amount,
-        participants: [...selectedParticipants],
+        participants: participantsDetail.map(pd => pd.shares > 1 ? `${pd.name} x${pd.shares}` : pd.name),
         date: new Date().toLocaleString('vi-VN')
       });
 
       document.getElementById('expenseName').value = '';
       document.getElementById('expenseAmount').value = '';
-      selectedParticipants = [];
+      shareState.expense = {};
       saveData();
       updateUI();
     }
 
     function deleteExpense(id) {
-      if (confirm('Xóa chi phí?')) {
-        allData.expenses = allData.expenses.filter(e => e.id !== id);
-        saveData();
-        updateUI();
+      if (!confirm('Xóa chi phí?')) return;
+
+      const exp = allData.expenses.find(e => e.id === id);
+      if (exp && Array.isArray(exp.participants)) {
+        // Hoàn lại tiền vào quỹ của từng người trước khi xóa
+        exp.participants.forEach(pd => {
+          if (pd && typeof pd === 'object' && pd.name) {
+            allData.funds[pd.name] = (allData.funds[pd.name] || 0) + (pd.amount || 0);
+          }
+        });
       }
+
+      allData.expenses = allData.expenses.filter(e => e.id !== id);
+      allData.bills = allData.bills.filter(b => b.id !== id); // xóa luôn ảnh bill gắn kèm (nếu có)
+      saveData();
+      updateUI();
     }
 
     function addFund() {
@@ -1730,27 +1870,61 @@
 
     function uploadBill() {
       const file = document.getElementById('billImage').files[0];
+      const name = document.getElementById('billExpenseName').value.trim() || 'Bill';
       const amount = parseFloat(document.getElementById('billAmount').value);
-      if (!file) { alert('Chọn ảnh'); return; }
+      const state = shareState.bill;
+      const names = Object.keys(state);
+
+      if (!file) { alert('Chọn hoặc chụp ảnh bill'); return; }
       if (!amount || amount <= 0) { alert('Nhập tiền'); return; }
+      if (names.length === 0) { alert('Chọn người tham gia'); return; }
+
+      const totalShares = names.reduce((s, n) => s + state[n], 0);
+      const perShare = amount / totalShares;
+      const participantsDetail = names.map(n => ({
+        name: n,
+        shares: state[n],
+        amount: perShare * state[n]
+      }));
 
       const reader = new FileReader();
       reader.onload = e => {
+        const image = e.target.result;
+        const id = Date.now().toString();
+
+        allData.expenses.push({
+          id,
+          name, amount,
+          participants: participantsDetail,
+          totalShares,
+          perShare,
+          image,
+          date: new Date().toLocaleDateString('vi-VN')
+        });
+
+        participantsDetail.forEach(pd => {
+          allData.funds[pd.name] = (allData.funds[pd.name] || 0) - pd.amount;
+        });
+
         allData.bills.push({
-          id: Date.now().toString(),
-          image: e.target.result,
+          id,
+          image,
           amount,
+          name,
           date: new Date().toLocaleString('vi-VN')
         });
 
         allData.history.push({
           id: Date.now() + 'b',
-          type: 'bill', amount,
+          type: 'bill', name, amount,
+          participants: participantsDetail.map(pd => pd.shares > 1 ? `${pd.name} x${pd.shares}` : pd.name),
           date: new Date().toLocaleString('vi-VN')
         });
 
         document.getElementById('billImage').value = '';
+        document.getElementById('billExpenseName').value = '';
         document.getElementById('billAmount').value = '';
+        shareState.bill = {};
         saveData();
         updateUI();
       };
