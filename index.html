@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#185fa5">
+  <title>🎾 Chia Tiền Sân Pickleball</title>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js"></script>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #f0f4f8 0%, #f9fafb 100%);
+      min-height: 100vh;
+      padding: 20px;
+      color: #1a1a1a;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    header {
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      border: 1px solid #e5e7eb;
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      font-size: 32px;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .sync-section {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .sync-code {
+      background: #185fa5;
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .sync-code:hover {
+      background: #0c447c;
+    }
+
+    .sync-input-group {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .sync-input-group input {
+      padding: 0.75rem;
+      border: 1.5px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+      width: 200px;
+    }
+
+    .sync-input-group input:focus {
+      outline: none;
+      border-color: #185fa5;
+      box-shadow: 0 0 0 3px rgba(24, 95, 165, 0.1);
+    }
+
+    /* Main Grid */
+    .main-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      border: 1px solid #e5e7eb;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.5rem;
+    }
+
+    .card-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: #185fa5;
+      margin-bottom: 0.5rem;
+    }
+
+    .card-subtitle {
+      font-size: 13px;
+      color: #9ca3af;
+    }
+
+    /* Section */
+    .section {
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      border: 1px solid #e5e7eb;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      color: #111827;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Forms */
+    .form-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group-full {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="file"],
+    select {
+      padding: 0.75rem;
+      border: 1.5px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    select:focus {
+      outline: none;
+      border-color: #185fa5;
+      box-shadow: 0 0 0 3px rgba(24, 95, 165, 0.1);
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-primary {
+      background: #185fa5;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #0c447c;
+    }
+
+    .btn-success {
+      background: #10b981;
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: #059669;
+    }
+
+    .btn-danger {
+      background: #ef4444;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #dc2626;
+    }
+
+    .btn-secondary {
+      background: #f3f4f6;
+      color: #374151;
+    }
+
+    .btn-secondary:hover {
+      background: #e5e7eb;
+    }
+
+    /* Fund List */
+    .fund-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .fund-card {
+      background: linear-gradient(135deg, #f3f4f6 0%, #f9fafb 100%);
+      padding: 1.5rem;
+      border-radius: 10px;
+      border: 1.5px solid #e5e7eb;
+    }
+
+    .fund-name {
+      font-weight: 600;
+      font-size: 14px;
+      color: #374151;
+      margin-bottom: 0.5rem;
+    }
+
+    .fund-amount {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .fund-positive {
+      color: #10b981;
+    }
+
+    .fund-negative {
+      color: #ef4444;
+    }
+
+    .fund-neutral {
+      color: #9ca3af;
+    }
+
+    .fund-status {
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    /* Participants */
+    .tag-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .tag {
+      background: #e5e7eb;
+      color: #374151;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      border: 1px solid #d1d5db;
+    }
+
+    .tag-remove {
+      cursor: pointer;
+      font-weight: bold;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+
+    .tag-remove:hover {
+      opacity: 1;
+    }
+
+    .tag-selected {
+      background: #185fa5;
+      color: white;
+      border-color: #185fa5;
+      cursor: pointer;
+    }
+
+    /* Expense List */
+    .expense-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .expense-item {
+      background: #f9fafb;
+      padding: 1.5rem;
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .expense-info {
+      flex: 1;
+    }
+
+    .expense-name {
+      font-weight: 600;
+      font-size: 16px;
+      color: #111827;
+      margin-bottom: 0.5rem;
+    }
+
+    .expense-meta {
+      font-size: 13px;
+      color: #6b7280;
+      margin: 0.25rem 0;
+    }
+
+    .expense-amount {
+      font-size: 20px;
+      font-weight: 700;
+      color: #185fa5;
+    }
+
+    /* Charts */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 2rem;
+      margin-top: 1.5rem;
+    }
+
+    .chart-container {
+      background: #f9fafb;
+      padding: 1.5rem;
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+      position: relative;
+      min-height: 300px;
+    }
+
+    .chart-container canvas {
+      max-width: 100%;
+    }
+
+    /* History */
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+
+    .history-item {
+      background: #f9fafb;
+      padding: 1rem;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+      font-size: 14px;
+    }
+
+    .history-time {
+      color: #6b7280;
+      font-size: 12px;
+      margin-bottom: 0.25rem;
+    }
+
+    .history-text {
+      color: #374151;
+      font-weight: 500;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 1rem;
+      border-bottom: 2px solid #e5e7eb;
+      margin-bottom: 1.5rem;
+    }
+
+    .tab {
+      padding: 0.75rem 1.5rem;
+      cursor: pointer;
+      color: #6b7280;
+      font-weight: 600;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      transition: all 0.2s;
+    }
+
+    .tab:hover {
+      color: #111827;
+    }
+
+    .tab-active {
+      color: #185fa5;
+      border-bottom-color: #185fa5;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Bill Gallery */
+    .bill-gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .bill-item {
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #e5e7eb;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .bill-item:hover {
+      transform: scale(1.05);
+    }
+
+    .bill-item img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .bill-info {
+      padding: 0.75rem;
+      background: #f9fafb;
+      font-size: 12px;
+      font-weight: 600;
+      color: #374151;
+    }
+
+    /* Stats */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-box {
+      background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+      padding: 1.5rem;
+      border-radius: 10px;
+      border: 1px solid #bfdbfe;
+    }
+
+    .stat-box.positive {
+      background: linear-gradient(135deg, #dcfce7 0%, #d1fae5 100%);
+      border-color: #86efac;
+    }
+
+    .stat-box.negative {
+      background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+      border-color: #fca5a5;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #1e3a8a;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-box.positive .stat-label {
+      color: #166534;
+    }
+
+    .stat-box.negative .stat-label {
+      color: #7f1d1d;
+    }
+
+    .stat-num {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1e3a8a;
+    }
+
+    .stat-box.positive .stat-num {
+      color: #16a34a;
+    }
+
+    .stat-box.negative .stat-num {
+      color: #dc2626;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .form-group {
+        grid-template-columns: 1fr;
+      }
+
+      .form-group-full {
+        grid-template-columns: 1fr;
+      }
+
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .header-top {
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .sync-section {
+        flex-direction: column;
+        width: 100%;
+      }
+
+      .sync-input-group {
+        flex-direction: column;
+      }
+
+      .sync-input-group input {
+        width: 100%;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .message {
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      display: none;
+    }
+
+    .message.show {
+      display: block;
+    }
+
+    .message.success {
+      background: #d1fae5;
+      color: #065f46;
+      border: 1px solid #6ee7b7;
+    }
+
+    .message.error {
+      background: #fee2e2;
+      color: #7f1d1d;
+      border: 1px solid #fca5a5;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="header-top">
+        <div>
+          <h1>🎾 Chia Tiền Sân Pickleball</h1>
+          <p style="color: #6b7280; margin-top: 0.5rem;">Quản lý chi phí & quỹ với đồng bộ realtime</p>
+        </div>
+        <div class="sync-section">
+          <button class="btn btn-primary" onclick="copySyncCode()" id="syncBtn">
+            📋 Mã: <span id="syncCode">LOADING...</span>
+          </button>
+          <div id="syncInputContainer" class="hidden sync-input-group">
+            <input type="text" id="syncCodeInput" placeholder="Nhập mã đồng bộ" onkeypress="handleSyncEnter(event)">
+            <button class="btn btn-success" onclick="syncWithCode()">Đồng bộ</button>
+            <button class="btn btn-secondary" onclick="cancelSync()">Hủy</button>
+          </div>
+          <button class="btn btn-secondary" onclick="showSyncInput()" id="syncToggle">↔️ Nhập mã</button>
+        </div>
+      </div>
+      <div id="syncMessage" class="message"></div>
+    </header>
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+      <div class="stat-box">
+        <div class="stat-label">💰 Tổng Chi Phí</div>
+        <div class="stat-num" id="totalExpense">0đ</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">👥 Số Thành Viên</div>
+        <div class="stat-num" id="memberCount">0</div>
+      </div>
+      <div class="stat-box positive">
+        <div class="stat-label">💵 Quỹ Dương</div>
+        <div class="stat-num" id="positiveFund">0đ</div>
+      </div>
+      <div class="stat-box negative">
+        <div class="stat-label">📉 Quỹ Âm</div>
+        <div class="stat-num" id="negativeFund">0đ</div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+      <!-- Left Column -->
+      <div>
+        <!-- Members Section -->
+        <div class="section">
+          <div class="section-title">👥 Quản Lý Thành Viên</div>
+          <div class="form-group-full">
+            <input type="text" id="memberInput" placeholder="Nhập tên thành viên" onkeypress="handleMemberEnter(event)">
+            <button class="btn btn-primary" onclick="addMember()">+ Thêm</button>
+          </div>
+          <div class="tag-list" id="memberList"></div>
+        </div>
+
+        <!-- Fund Management -->
+        <div class="section" id="fundSection" style="display: none;">
+          <div class="section-title">💵 Quỹ Của Mọi Người</div>
+          <div class="fund-grid" id="fundList"></div>
+        </div>
+      </div>
+
+      <!-- Right Column -->
+      <div>
+        <!-- Quick Stats -->
+        <div class="section">
+          <div class="section-title">📊 Thống Kê Nhanh</div>
+          <div id="quickStats" style="display: flex; flex-direction: column; gap: 1rem;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Expense & Bill Section -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+      <!-- Add Expense -->
+      <div class="section" id="expenseSection" style="display: none;">
+        <div class="section-title">💰 Ghi Chi Phí</div>
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+          <input type="text" id="expenseName" placeholder="Tên chi phí (VD: Thuê sân)">
+          <input type="number" id="expenseAmount" placeholder="Số tiền" step="1000">
+          <div>
+            <p style="font-size: 13px; font-weight: 600; color: #6b7280; margin-bottom: 0.75rem;">Chọn người tham gia:</p>
+            <div class="tag-list" id="participantSelect"></div>
+          </div>
+          <button class="btn btn-success" onclick="addExpense()" style="width: 100%;">💾 Thêm Chi Phí</button>
+        </div>
+      </div>
+
+      <!-- Bill Upload -->
+      <div class="section" id="billSection" style="display: none;">
+        <div class="section-title">📸 Upload Bill</div>
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+          <input type="file" id="billImage" accept="image/*">
+          <input type="number" id="billAmount" placeholder="Số tiền từ bill" step="1000">
+          <button class="btn btn-primary" onclick="uploadBill()" style="width: 100%;">📤 Upload</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Fund Section -->
+    <div class="section" id="addFundSection" style="display: none; margin-bottom: 2rem;">
+      <div class="section-title">➕ Nạp Tiền Vào Quỹ</div>
+      <div class="form-group">
+        <select id="fundMember" style="width: 100%;">
+          <option value="">-- Chọn thành viên --</option>
+        </select>
+        <input type="number" id="fundAmount" placeholder="Số tiền nạp" step="1000">
+        <button class="btn btn-success" onclick="addFund()">Nạp Tiền</button>
+      </div>
+    </div>
+
+    <!-- Expenses & History -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+      <!-- Expenses List -->
+      <div class="section" id="expensesListSection" style="display: none;">
+        <div class="section-title">📋 Chi Phí Gần Đây</div>
+        <div class="expense-list" id="expensesList"></div>
+      </div>
+
+      <!-- History -->
+      <div class="section" id="historySection" style="display: none;">
+        <div class="section-title">⏱️ Lịch Sử Giao Dịch</div>
+        <div class="history-list" id="historyList"></div>
+      </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="section" id="chartsSection" style="display: none;">
+      <div class="section-title">📈 Biểu Đồ Thống Kê</div>
+      <div class="charts-grid">
+        <div class="chart-container">
+          <canvas id="fundChart"></canvas>
+        </div>
+        <div class="chart-container">
+          <canvas id="expenseChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bills Gallery -->
+    <div class="section" id="billsSection" style="display: none;">
+      <div class="section-title">📸 Thư Viện Bill</div>
+      <div class="bill-gallery" id="billGallery"></div>
+    </div>
+
+  </div>
+
+  <script>
+    // Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDt6dLYA2Jj4yEuagL9pylVt-GTaELMc_8",
+      authDomain: "chiatienpickleball.firebaseapp.com",
+      databaseURL: "https://chiatienpickleball-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "chiatienpickleball",
+      storageBucket: "chiatienpickleball.firebasestorage.app",
+      messagingSenderId: "44036874027",
+      appId: "1:44036874027:web:3ad13fe3d2fa65f4556f6e",
+      measurementId: "G-VG8VLN4136"
+    };
+
+    let db;
+    let currentSyncCode = '';
+    let selectedParticipants = [];
+    let chartFund, chartExpense;
+    
+    let allData = {
+      participants: [],
+      expenses: [],
+      funds: {},
+      history: [],
+      bills: [],
+      syncCode: ''
+    };
+
+    // Initialize Firebase
+    function initFirebase() {
+      try {
+        const app = firebase.initializeApp(firebaseConfig);
+        db = firebase.database(app);
+        generateOrLoadSyncCode();
+        loadData();
+      } catch (error) {
+        console.error('Firebase error:', error);
+      }
+    }
+
+    function generateOrLoadSyncCode() {
+      const stored = localStorage.getItem('syncCode');
+      if (stored) {
+        currentSyncCode = stored;
+      } else {
+        currentSyncCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+        localStorage.setItem('syncCode', currentSyncCode);
+      }
+      document.getElementById('syncCode').textContent = currentSyncCode;
+    }
+
+    function copySyncCode() {
+      navigator.clipboard.writeText(currentSyncCode);
+      const btn = document.getElementById('syncBtn');
+      const original = btn.innerHTML;
+      btn.innerHTML = '✅ Đã Sao Chép';
+      setTimeout(() => btn.innerHTML = original, 2000);
+    }
+
+    function showSyncInput() {
+      const container = document.getElementById('syncInputContainer');
+      const toggle = document.getElementById('syncToggle');
+      if (container.classList.contains('hidden')) {
+        container.classList.remove('hidden');
+        toggle.textContent = '✕ Hủy';
+      } else {
+        container.classList.add('hidden');
+        toggle.textContent = '↔️ Nhập mã';
+      }
+    }
+
+    function cancelSync() {
+      document.getElementById('syncInputContainer').classList.add('hidden');
+      document.getElementById('syncToggle').textContent = '↔️ Nhập mã';
+      document.getElementById('syncCodeInput').value = '';
+    }
+
+    function handleSyncEnter(event) {
+      if (event.key === 'Enter') syncWithCode();
+    }
+
+    function syncWithCode() {
+      const code = document.getElementById('syncCodeInput').value.toUpperCase().trim();
+      if (!code) {
+        showMessage('Vui lòng nhập mã đồng bộ', 'error');
+        return;
+      }
+
+      const ref = firebase.database().ref('rooms/' + code);
+      ref.once('value')
+        .then(snapshot => {
+          if (snapshot.exists()) {
+            allData = snapshot.val();
+            localStorage.setItem('syncCode', code);
+            currentSyncCode = code;
+            document.getElementById('syncCode').textContent = code;
+            updateUI();
+            cancelSync();
+            showMessage('✓ Đồng bộ thành công!', 'success');
+            
+            ref.on('value', snapshot => {
+              if (snapshot.exists()) {
+                allData = snapshot.val();
+                updateUI();
+              }
+            });
+          } else {
+            showMessage('Mã đồng bộ không tồn tại', 'error');
+          }
+        })
+        .catch(error => showMessage('Lỗi: ' + error.message, 'error'));
+    }
+
+    function showMessage(msg, type) {
+      const el = document.getElementById('syncMessage');
+      el.textContent = msg;
+      el.className = 'message show ' + type;
+      setTimeout(() => el.classList.remove('show'), 3000);
+    }
+
+    function loadData() {
+      const ref = firebase.database().ref('rooms/' + currentSyncCode);
+      ref.set({
+        participants: allData.participants || [],
+        expenses: allData.expenses || [],
+        funds: allData.funds || {},
+        history: allData.history || [],
+        bills: allData.bills || [],
+        syncCode: currentSyncCode
+      });
+
+      ref.on('value', snapshot => {
+        if (snapshot.exists()) {
+          allData = snapshot.val();
+          updateUI();
+        }
+      });
+    }
+
+    function saveData() {
+      if (!db) return;
+      const ref = firebase.database().ref('rooms/' + currentSyncCode);
+      ref.set(allData).catch(error => {
+        console.error('Save error:', error);
+        localStorage.setItem('localData', JSON.stringify(allData));
+      });
+    }
+
+    function updateUI() {
+      updateMembers();
+      updateFundList();
+      updateQuickStats();
+      updateParticipantSelect();
+      updateFundMemberSelect();
+      updateExpensesList();
+      updateHistoryList();
+      updateBillsList();
+      updateCharts();
+      updateVisibility();
+    }
+
+    function updateMembers() {
+      const list = document.getElementById('memberList');
+      list.innerHTML = '';
+      allData.participants.forEach(m => {
+        const tag = document.createElement('div');
+        tag.className = 'tag';
+        tag.innerHTML = `${m} <span class="tag-remove" onclick="removeMember('${m}')">✕</span>`;
+        list.appendChild(tag);
+      });
+    }
+
+    function updateFundList() {
+      const list = document.getElementById('fundList');
+      list.innerHTML = '';
+      allData.participants.forEach(p => {
+        const fund = allData.funds[p] || 0;
+        const card = document.createElement('div');
+        card.className = 'fund-card';
+        let cls = 'fund-neutral';
+        let status = '💤 Không có quỹ';
+        if (fund > 0) {
+          cls = 'fund-positive';
+          status = '✅ Có quỹ';
+        } else if (fund < 0) {
+          cls = 'fund-negative';
+          status = '⚠️ Quỹ âm';
+        }
+        card.innerHTML = `
+          <div class="fund-name">${p}</div>
+          <div class="fund-amount ${cls}">${fund.toLocaleString('vi-VN')}đ</div>
+          <div class="fund-status">${status}</div>
+        `;
+        list.appendChild(card);
+      });
+    }
+
+    function updateQuickStats() {
+      const container = document.getElementById('quickStats');
+      const total = allData.expenses.reduce((s, e) => s + (e.amount || 0), 0);
+      let positiveFund = 0, negativeFund = 0;
+      
+      Object.values(allData.funds).forEach(f => {
+        if (f > 0) positiveFund += f;
+        else if (f < 0) negativeFund += Math.abs(f);
+      });
+
+      document.getElementById('totalExpense').textContent = total.toLocaleString('vi-VN') + 'đ';
+      document.getElementById('memberCount').textContent = allData.participants.length;
+      document.getElementById('positiveFund').textContent = positiveFund.toLocaleString('vi-VN') + 'đ';
+      document.getElementById('negativeFund').textContent = negativeFund.toLocaleString('vi-VN') + 'đ';
+    }
+
+    function updateParticipantSelect() {
+      const select = document.getElementById('participantSelect');
+      select.innerHTML = '';
+      allData.participants.forEach(p => {
+        const tag = document.createElement('div');
+        tag.className = 'tag ' + (selectedParticipants.includes(p) ? 'tag-selected' : '');
+        tag.textContent = p;
+        tag.onclick = () => toggleParticipant(p);
+        select.appendChild(tag);
+      });
+    }
+
+    function updateFundMemberSelect() {
+      const select = document.getElementById('fundMember');
+      const val = select.value;
+      select.innerHTML = '<option value="">-- Chọn thành viên --</option>';
+      allData.participants.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p;
+        opt.textContent = p;
+        select.appendChild(opt);
+      });
+      select.value = val;
+    }
+
+    function updateExpensesList() {
+      const list = document.getElementById('expensesList');
+      list.innerHTML = '';
+      const sorted = [...allData.expenses].reverse();
+      sorted.forEach(exp => {
+        const item = document.createElement('div');
+        item.className = 'expense-item';
+        item.innerHTML = `
+          <div class="expense-info">
+            <div class="expense-name">${exp.name}</div>
+            <div class="expense-meta">📅 ${exp.date}</div>
+            <div class="expense-meta">👥 ${exp.participants.join(', ')}</div>
+            <div class="expense-meta">💵 ${(exp.amount / exp.participants.length).toLocaleString('vi-VN')}đ/người</div>
+          </div>
+          <div style="text-align: right;">
+            <div class="expense-amount">${exp.amount.toLocaleString('vi-VN')}đ</div>
+            <button class="btn btn-danger" style="font-size: 12px; padding: 0.5rem 1rem; margin-top: 0.5rem;" onclick="deleteExpense('${exp.id}')">Xóa</button>
+          </div>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    function updateHistoryList() {
+      const list = document.getElementById('historyList');
+      list.innerHTML = '';
+      const sorted = [...allData.history].reverse().slice(0, 20);
+      sorted.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'history-item';
+        let text = '';
+        if (item.type === 'expense') {
+          text = `💰 ${item.name}: ${item.amount.toLocaleString('vi-VN')}đ`;
+        } else if (item.type === 'fund') {
+          text = `➕ ${item.member}: +${item.amount.toLocaleString('vi-VN')}đ`;
+        } else if (item.type === 'bill') {
+          text = `📸 Bill: ${item.amount.toLocaleString('vi-VN')}đ`;
+        }
+        div.innerHTML = `<div class="history-time">${item.date}</div><div class="history-text">${text}</div>`;
+        list.appendChild(div);
+      });
+    }
+
+    function updateBillsList() {
+      const gallery = document.getElementById('billGallery');
+      gallery.innerHTML = '';
+      allData.bills.forEach(bill => {
+        const item = document.createElement('div');
+        item.className = 'bill-item';
+        item.innerHTML = `
+          <img src="${bill.image}" alt="bill">
+          <div class="bill-info">${bill.amount.toLocaleString('vi-VN')}đ</div>
+        `;
+        gallery.appendChild(item);
+      });
+    }
+
+    function updateCharts() {
+      if (allData.participants.length === 0) return;
+
+      // Fund Chart
+      const fundCtx = document.getElementById('fundChart')?.getContext('2d');
+      if (fundCtx) {
+        if (chartFund) chartFund.destroy();
+        chartFund = new Chart(fundCtx, {
+          type: 'bar',
+          data: {
+            labels: allData.participants,
+            datasets: [{
+              label: 'Quỹ (đ)',
+              data: allData.participants.map(p => allData.funds[p] || 0),
+              backgroundColor: allData.participants.map(p => {
+                const f = allData.funds[p] || 0;
+                return f > 0 ? '#10b981' : f < 0 ? '#ef4444' : '#9ca3af';
+              }),
+              borderRadius: 6
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+          }
+        });
+      }
+
+      // Expense Chart
+      const expCtx = document.getElementById('expenseChart')?.getContext('2d');
+      if (expCtx) {
+        if (chartExpense) chartExpense.destroy();
+        const expData = {};
+        allData.expenses.forEach(e => {
+          expData[e.name] = (expData[e.name] || 0) + e.amount;
+        });
+        chartExpense = new Chart(expCtx, {
+          type: 'doughnut',
+          data: {
+            labels: Object.keys(expData),
+            datasets: [{
+              data: Object.values(expData),
+              backgroundColor: ['#185fa5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } }
+          }
+        });
+      }
+    }
+
+    function updateVisibility() {
+      const show = allData.participants.length > 0;
+      document.getElementById('fundSection').style.display = show ? 'block' : 'none';
+      document.getElementById('expenseSection').style.display = show ? 'block' : 'none';
+      document.getElementById('billSection').style.display = show ? 'block' : 'none';
+      document.getElementById('addFundSection').style.display = show ? 'block' : 'none';
+      document.getElementById('expensesListSection').style.display = (allData.expenses.length > 0) ? 'block' : 'none';
+      document.getElementById('historySection').style.display = (allData.history.length > 0) ? 'block' : 'none';
+      document.getElementById('chartsSection').style.display = (allData.expenses.length > 0) ? 'block' : 'none';
+      document.getElementById('billsSection').style.display = (allData.bills.length > 0) ? 'block' : 'none';
+    }
+
+    function handleMemberEnter(event) {
+      if (event.key === 'Enter') addMember();
+    }
+
+    function addMember() {
+      const input = document.getElementById('memberInput');
+      const name = input.value.trim();
+      if (!name) { alert('Nhập tên thành viên'); return; }
+      if (allData.participants.includes(name)) { alert('Đã tồn tại'); return; }
+      
+      allData.participants.push(name);
+      allData.funds[name] = 0;
+      input.value = '';
+      saveData();
+      updateUI();
+    }
+
+    function removeMember(name) {
+      if (confirm(`Xóa ${name}?`)) {
+        allData.participants = allData.participants.filter(p => p !== name);
+        delete allData.funds[name];
+        saveData();
+        updateUI();
+      }
+    }
+
+    function toggleParticipant(name) {
+      selectedParticipants = selectedParticipants.includes(name)
+        ? selectedParticipants.filter(p => p !== name)
+        : [...selectedParticipants, name];
+      updateParticipantSelect();
+    }
+
+    function addExpense() {
+      const name = document.getElementById('expenseName').value.trim();
+      const amount = parseFloat(document.getElementById('expenseAmount').value);
+      if (!name) { alert('Nhập tên'); return; }
+      if (!amount || amount <= 0) { alert('Nhập tiền'); return; }
+      if (selectedParticipants.length === 0) { alert('Chọn người'); return; }
+
+      const share = amount / selectedParticipants.length;
+      allData.expenses.push({
+        id: Date.now().toString(),
+        name, amount,
+        participants: [...selectedParticipants],
+        sharePerPerson: share,
+        date: new Date().toLocaleDateString('vi-VN')
+      });
+
+      selectedParticipants.forEach(p => {
+        allData.funds[p] = (allData.funds[p] || 0) - share;
+      });
+
+      allData.history.push({
+        id: Date.now() + '',
+        type: 'expense', name, amount,
+        participants: [...selectedParticipants],
+        date: new Date().toLocaleString('vi-VN')
+      });
+
+      document.getElementById('expenseName').value = '';
+      document.getElementById('expenseAmount').value = '';
+      selectedParticipants = [];
+      saveData();
+      updateUI();
+    }
+
+    function deleteExpense(id) {
+      if (confirm('Xóa chi phí?')) {
+        allData.expenses = allData.expenses.filter(e => e.id !== id);
+        saveData();
+        updateUI();
+      }
+    }
+
+    function addFund() {
+      const member = document.getElementById('fundMember').value;
+      const amount = parseFloat(document.getElementById('fundAmount').value);
+      if (!member) { alert('Chọn thành viên'); return; }
+      if (!amount || amount <= 0) { alert('Nhập tiền'); return; }
+
+      allData.funds[member] = (allData.funds[member] || 0) + amount;
+      allData.history.push({
+        id: Date.now() + '',
+        type: 'fund', member, amount,
+        date: new Date().toLocaleString('vi-VN')
+      });
+
+      document.getElementById('fundAmount').value = '';
+      document.getElementById('fundMember').value = '';
+      saveData();
+      updateUI();
+    }
+
+    function uploadBill() {
+      const file = document.getElementById('billImage').files[0];
+      const amount = parseFloat(document.getElementById('billAmount').value);
+      if (!file) { alert('Chọn ảnh'); return; }
+      if (!amount || amount <= 0) { alert('Nhập tiền'); return; }
+
+      const reader = new FileReader();
+      reader.onload = e => {
+        allData.bills.push({
+          id: Date.now().toString(),
+          image: e.target.result,
+          amount,
+          date: new Date().toLocaleString('vi-VN')
+        });
+
+        allData.history.push({
+          id: Date.now() + 'b',
+          type: 'bill', amount,
+          date: new Date().toLocaleString('vi-VN')
+        });
+
+        document.getElementById('billImage').value = '';
+        document.getElementById('billAmount').value = '';
+        saveData();
+        updateUI();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    window.addEventListener('DOMContentLoaded', initFirebase);
+  </script>
+</body>
+</html>
