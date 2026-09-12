@@ -478,6 +478,48 @@
     }
 
     /* Charts */
+    .mvp-box {
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      border: 1px solid #fbbf24;
+      border-radius: 10px;
+      padding: 1.5rem;
+      text-align: center;
+    }
+
+    .mvp-box .mvp-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #92400e;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.75rem;
+    }
+
+    .mvp-box .mvp-avatar {
+      font-size: 40px;
+      margin-bottom: 0.5rem;
+    }
+
+    .mvp-box .mvp-name {
+      font-size: 24px;
+      font-weight: 800;
+      color: #78350f;
+      margin-bottom: 0.25rem;
+    }
+
+    .mvp-box .mvp-count {
+      font-size: 14px;
+      color: #92400e;
+      font-weight: 600;
+    }
+
+    .mvp-empty {
+      color: #9ca3af;
+      text-align: center;
+      padding: 1.5rem 0;
+      font-size: 14px;
+    }
+
     .chart-container {
       background: white;
       padding: 1.5rem;
@@ -953,7 +995,6 @@
     <button class="tab-button" data-tab="members" onclick="switchTab('members')">👥 Thành Viên</button>
     <button class="tab-button" data-tab="fund" onclick="switchTab('fund')">💵 Quỹ</button>
     <button class="tab-button" data-tab="expense" onclick="switchTab('expense')">💰 Chi Phí</button>
-    <button class="tab-button" data-tab="bill" onclick="switchTab('bill')">📸 Bill</button>
     <button class="tab-button" data-tab="history" onclick="switchTab('history')">⏱️ Lịch Sử</button>
     <button class="tab-button" data-tab="charts" onclick="switchTab('charts')">📈 Biểu Đồ</button>
     <button class="tab-button" data-tab="bills" onclick="switchTab('bills')">🖼️ Thư Viện</button>
@@ -1021,7 +1062,7 @@
           <select id="fundMember">
             <option value="">-- Chọn thành viên --</option>
           </select>
-          <input type="number" id="fundAmount" placeholder="Số tiền" step="1000">
+          <input type="text" id="fundAmount" placeholder="Số tiền (VD: 100,000)" inputmode="numeric">
           <input type="file" id="fundBillImage" accept="image/*" capture="environment">
           <p class="share-hint">💡 Đính kèm ảnh chuyển khoản/bill làm bằng chứng nạp quỹ (không bắt buộc).</p>
           <div style="display: flex; gap: 0.75rem;">
@@ -1037,17 +1078,21 @@
       </div>
     </div>
 
-    <!-- Tab 4: Expense -->
+    <!-- Tab 4: Expense (gộp chung với Bill) -->
     <div id="expense" class="tab-content">
       <div class="card" id="expenseCard" style="display: none;">
         <div class="card-title" id="expenseFormTitle">💰 Ghi Chi Phí</div>
         <div class="form-group-full">
           <input type="text" id="expenseName" placeholder="Tên chi phí (VD: Thuê sân)">
-          <input type="number" id="expenseAmount" placeholder="Số tiền" step="1000">
+          <input type="text" id="expenseAmount" placeholder="Số tiền (VD: 100,000)" inputmode="numeric">
           <div>
             <p style="font-size: 13px; font-weight: 600; color: #6b7280; margin-bottom: 0.75rem;">Chọn người tham gia:</p>
             <div class="tag-list" id="participantSelect"></div>
             <p class="share-hint">💡 Ai đó dẫn theo khách mời? Bấm vào nút + trên tag của họ để tính thêm 1-2 phần.</p>
+          </div>
+          <div>
+            <label style="font-size: 13px; font-weight: 600; color: #6b7280; display: block; margin-bottom: 0.5rem;">📸 Đính kèm ảnh bill (không bắt buộc):</label>
+            <input type="file" id="expenseBillImage" accept="image/*" capture="environment">
           </div>
           <div style="display: flex; gap: 0.75rem;">
             <button class="btn btn-success" id="expenseSubmitBtn" onclick="addExpense()" style="flex: 1; justify-content: center;">💾 Thêm Chi Phí</button>
@@ -1059,24 +1104,6 @@
       <div class="card" id="expenseListCard" style="display: none;">
         <div class="card-title">📋 Danh Sách Chi Phí</div>
         <div id="expensesList"></div>
-      </div>
-    </div>
-
-    <!-- Tab 5: Bill -->
-    <div id="bill" class="tab-content">
-      <div class="card" id="billUploadCard" style="display: none;">
-        <div class="card-title">📸 Chụp / Upload Bill</div>
-        <div class="form-group-full">
-          <input type="file" id="billImage" accept="image/*" capture="environment">
-          <input type="text" id="billExpenseName" placeholder="Tên chi phí (VD: Ăn tối sau trận)">
-          <input type="number" id="billAmount" placeholder="Số tiền từ bill" step="1000">
-          <div>
-            <p style="font-size: 13px; font-weight: 600; color: #6b7280; margin-bottom: 0.75rem;">Chọn người tham gia:</p>
-            <div class="tag-list" id="billParticipantSelect"></div>
-            <p class="share-hint">💡 Ai đó dẫn theo khách mời? Bấm vào nút + trên tag của họ để tính thêm 1-2 phần.</p>
-          </div>
-          <button class="btn btn-primary" onclick="uploadBill()" style="width: 100%;">📤 Lưu Bill & Chia Tiền</button>
-        </div>
       </div>
     </div>
 
@@ -1101,6 +1128,17 @@
         <div class="card-title">📊 Biểu Đồ Chi Phí</div>
         <div class="chart-container">
           <canvas id="expenseChart"></canvas>
+        </div>
+      </div>
+
+      <div class="card" id="participationCard" style="display: none;">
+        <div class="card-title">🏆 Gương Mặt Tiêu Biểu & Tần Suất Tham Gia</div>
+        <div class="form-group-full" style="margin-bottom: 1.5rem;">
+          <select id="statsMonthSelect" onchange="updateParticipationStats()"></select>
+        </div>
+        <div id="mvpDisplay"></div>
+        <div class="chart-container" style="margin-top: 1.5rem;">
+          <canvas id="participationChart"></canvas>
         </div>
       </div>
     </div>
@@ -1192,8 +1230,8 @@
 
     let db;
     let currentSyncCode = '';
-    let shareState = { expense: {}, bill: {} }; // { name: soPhan }, hỗ trợ khách mời (nhiều phần)
-    let chartFund, chartExpense;
+    let shareState = { expense: {} }; // { name: soPhan }, hỗ trợ khách mời (nhiều phần)
+    let chartFund, chartExpense, chartParticipation;
     let roomListener = null;
     let myGroups = [];
     let modalMode = 'create'; // 'create' | 'edit'
@@ -1229,6 +1267,12 @@
       document.getElementById(tabName).classList.add('active');
       const btn = document.querySelector(`.tab-button[data-tab="${tabName}"]`);
       if (btn) btn.classList.add('active');
+    }
+
+    // Gắn định dạng số có dấu phẩy cho các ô nhập tiền
+    function initInputFormatting() {
+      attachThousandsInput('expenseAmount');
+      attachThousandsInput('fundAmount');
     }
 
     // Initialize Firebase
@@ -1641,7 +1685,6 @@
       updateFundTransList();
       updateStats();
       renderSharePicker('expense');
-      renderSharePicker('bill');
       updateFundMemberSelect();
       updateExpensesList();
       updateHistoryList();
@@ -1905,7 +1948,151 @@
       });
     }
 
+    // ===== Định dạng số có dấu phẩy ngăn cách (100,000) =====
+    function attachThousandsInput(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.setAttribute('inputmode', 'numeric');
+      el.setAttribute('autocomplete', 'off');
+      el.addEventListener('input', () => {
+        const digits = el.value.replace(/[^\d]/g, '');
+        el.value = digits ? Number(digits).toLocaleString('en-US') : '';
+      });
+    }
+
+    function getAmountValue(id) {
+      const el = document.getElementById(id);
+      if (!el) return NaN;
+      const digits = el.value.replace(/[^\d]/g, '');
+      return digits ? parseInt(digits, 10) : NaN;
+    }
+
+    function setAmountValue(id, value) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.value = (value || value === 0) ? Number(value).toLocaleString('en-US') : '';
+    }
+
+    // ===== Phân tích tần suất tham gia theo tháng + Gương mặt tiêu biểu =====
+    function getExpenseMonthKey(exp) {
+      if (exp.timestamp) {
+        const d = new Date(exp.timestamp);
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+      }
+      const parts = (exp.date || '').split('/');
+      if (parts.length === 3) {
+        const [d, m, y] = parts;
+        return y + '-' + String(m).padStart(2, '0');
+      }
+      return null;
+    }
+
+    function monthKeyLabel(key) {
+      if (!key) return '';
+      const [y, m] = key.split('-');
+      return `Tháng ${parseInt(m, 10)}/${y}`;
+    }
+
+    function getExpenseParticipantNames(exp) {
+      if (!Array.isArray(exp.participants)) return [];
+      return exp.participants.map(p => (typeof p === 'string') ? p : (p && p.name)).filter(Boolean);
+    }
+
+    function populateMonthSelect() {
+      const select = document.getElementById('statsMonthSelect');
+      if (!select) return [];
+      const keys = new Set();
+      allData.expenses.forEach(exp => {
+        const key = getExpenseMonthKey(exp);
+        if (key) keys.add(key);
+      });
+      const sortedKeys = Array.from(keys).sort().reverse();
+      const prevVal = select.value;
+      select.innerHTML = '';
+      if (sortedKeys.length === 0) {
+        select.innerHTML = '<option value="">Chưa có dữ liệu</option>';
+        return [];
+      }
+      sortedKeys.forEach(key => {
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = monthKeyLabel(key);
+        select.appendChild(opt);
+      });
+      select.value = sortedKeys.includes(prevVal) ? prevVal : sortedKeys[0];
+      return sortedKeys;
+    }
+
+    function updateParticipationStats() {
+      const card = document.getElementById('participationCard');
+      const sortedKeys = populateMonthSelect();
+      const select = document.getElementById('statsMonthSelect');
+      const mvpDisplay = document.getElementById('mvpDisplay');
+
+      if (!card || !select) return;
+
+      if (sortedKeys.length === 0 || allData.participants.length === 0) {
+        card.style.display = 'none';
+        return;
+      }
+      card.style.display = 'block';
+
+      const monthKey = select.value;
+      const counts = {};
+      allData.participants.forEach(p => counts[p] = 0);
+
+      allData.expenses.forEach(exp => {
+        if (getExpenseMonthKey(exp) !== monthKey) return;
+        const names = new Set(getExpenseParticipantNames(exp));
+        names.forEach(n => { counts[n] = (counts[n] || 0) + 1; });
+      });
+
+      const entries = Object.entries(counts).filter(([, c]) => c > 0).sort((a, b) => b[1] - a[1]);
+
+      if (entries.length === 0) {
+        mvpDisplay.innerHTML = '<div class="mvp-empty">Chưa có chi phí nào trong tháng này</div>';
+      } else {
+        const maxCount = entries[0][1];
+        const topNames = entries.filter(([, c]) => c === maxCount).map(([n]) => n);
+        const avatarOf = (n) => renderAvatarHtml((allData.memberAvatars && allData.memberAvatars[n]) || '👤');
+        mvpDisplay.innerHTML = `
+          <div class="mvp-box">
+            <div class="mvp-title">🏆 Gương Mặt Tiêu Biểu ${monthKeyLabel(monthKey)}</div>
+            <div class="mvp-avatar">${topNames.map(avatarOf).join(' ')}</div>
+            <div class="mvp-name">${topNames.map(escapeHtml).join(', ')}</div>
+            <div class="mvp-count">Tham gia ${maxCount} lần trong tháng</div>
+          </div>
+        `;
+      }
+
+      const partCtx = document.getElementById('participationChart')?.getContext('2d');
+      if (partCtx) {
+        if (chartParticipation) chartParticipation.destroy();
+        const labels = allData.participants;
+        const data = labels.map(p => counts[p] || 0);
+        chartParticipation = new Chart(partCtx, {
+          type: 'bar',
+          data: {
+            labels,
+            datasets: [{
+              label: 'Số lần tham gia',
+              data,
+              backgroundColor: '#f59e0b',
+              borderRadius: 6
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+          }
+        });
+      }
+    }
+
     function updateCharts() {
+      updateParticipationStats();
       if (allData.participants.length === 0) return;
 
       // Fund Chart
@@ -1967,7 +2154,6 @@
       document.getElementById('addFundCard').style.display = show ? 'block' : 'none';
       document.getElementById('expenseCard').style.display = show ? 'block' : 'none';
       document.getElementById('expenseListCard').style.display = (allData.expenses.length > 0) ? 'block' : 'none';
-      document.getElementById('billUploadCard').style.display = show ? 'block' : 'none';
       document.getElementById('historyCard').style.display = (allData.history.length > 0) ? 'block' : 'none';
       document.getElementById('chartsCard').style.display = (allData.expenses.length > 0) ? 'block' : 'none';
       document.getElementById('expenseChartCard').style.display = (allData.expenses.length > 0) ? 'block' : 'none';
@@ -1997,7 +2183,6 @@
         allData.participants = allData.participants.filter(p => p !== name);
         delete allData.funds[name];
         delete shareState.expense[name];
-        delete shareState.bill[name];
         if (allData.memberAvatars) delete allData.memberAvatars[name];
         recomputeFunds();
         saveData();
@@ -2007,7 +2192,8 @@
 
     function addExpense() {
       const name = document.getElementById('expenseName').value.trim();
-      const amount = parseFloat(document.getElementById('expenseAmount').value);
+      const amount = getAmountValue('expenseAmount');
+      const file = document.getElementById('expenseBillImage').files[0];
       const state = shareState.expense;
       const names = Object.keys(state);
 
@@ -2023,49 +2209,72 @@
         amount: perShare * state[n]
       }));
 
-      if (editingExpenseId) {
-        const exp = allData.expenses.find(e => e.id === editingExpenseId);
-        if (exp) {
-          exp.name = name;
-          exp.amount = amount;
-          exp.participants = participantsDetail;
-          exp.totalShares = totalShares;
-          exp.perShare = perShare;
-          // Ảnh bill (nếu có) và ngày tạo được giữ nguyên
+      const finalize = (image) => {
+        if (editingExpenseId) {
+          const exp = allData.expenses.find(e => e.id === editingExpenseId);
+          if (exp) {
+            exp.name = name;
+            exp.amount = amount;
+            exp.participants = participantsDetail;
+            exp.totalShares = totalShares;
+            exp.perShare = perShare;
+            if (image) exp.image = image; // chỉ thay ảnh khi chọn ảnh mới, không thì giữ ảnh cũ
 
-          // Đồng bộ lại tên/số tiền cho ảnh trong Thư Viện Bill (nếu khoản này gắn với 1 bill)
-          const bill = allData.bills.find(b => b.id === editingExpenseId);
-          if (bill) { bill.name = name; bill.amount = amount; }
+            // Đồng bộ lại ảnh/tên/số tiền trong Thư Viện Bill (nếu khoản này có ảnh đính kèm)
+            if (exp.image) {
+              let bill = allData.bills.find(b => b.id === editingExpenseId);
+              if (bill) {
+                bill.name = name; bill.amount = amount; bill.image = exp.image;
+              } else {
+                allData.bills.push({ id: editingExpenseId, image: exp.image, amount, name, date: new Date().toLocaleString('vi-VN') });
+              }
+            }
+
+            allData.history.push({
+              id: Date.now() + 'e',
+              type: 'expense_edit', name, amount,
+              date: new Date().toLocaleString('vi-VN')
+            });
+          }
+          editingExpenseId = null;
+        } else {
+          const id = Date.now().toString();
+          const expObj = {
+            id, name, amount,
+            participants: participantsDetail,
+            totalShares,
+            perShare,
+            timestamp: Date.now(),
+            date: new Date().toLocaleDateString('vi-VN')
+          };
+          if (image) expObj.image = image;
+          allData.expenses.push(expObj);
+
+          if (image) {
+            allData.bills.push({ id, image, amount, name, date: new Date().toLocaleString('vi-VN') });
+          }
 
           allData.history.push({
-            id: Date.now() + 'e',
-            type: 'expense_edit', name, amount,
+            id: Date.now() + '',
+            type: 'expense', name, amount,
+            participants: participantsDetail.map(pd => pd.shares > 1 ? `${pd.name} x${pd.shares}` : pd.name),
             date: new Date().toLocaleString('vi-VN')
           });
         }
-        editingExpenseId = null;
+
+        recomputeFunds();
+        resetExpenseForm();
+        saveData();
+        updateUI();
+      };
+
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = e => finalize(e.target.result);
+        reader.readAsDataURL(file);
       } else {
-        allData.expenses.push({
-          id: Date.now().toString(),
-          name, amount,
-          participants: participantsDetail,
-          totalShares,
-          perShare,
-          date: new Date().toLocaleDateString('vi-VN')
-        });
-
-        allData.history.push({
-          id: Date.now() + '',
-          type: 'expense', name, amount,
-          participants: participantsDetail.map(pd => pd.shares > 1 ? `${pd.name} x${pd.shares}` : pd.name),
-          date: new Date().toLocaleString('vi-VN')
-        });
+        finalize(null);
       }
-
-      recomputeFunds();
-      resetExpenseForm();
-      saveData();
-      updateUI();
     }
 
     function editExpense(id) {
@@ -2074,7 +2283,8 @@
 
       editingExpenseId = id;
       document.getElementById('expenseName').value = exp.name;
-      document.getElementById('expenseAmount').value = exp.amount;
+      setAmountValue('expenseAmount', exp.amount);
+      document.getElementById('expenseBillImage').value = '';
 
       shareState.expense = {};
       (exp.participants || []).forEach(pd => {
@@ -2100,6 +2310,7 @@
     function resetExpenseForm() {
       document.getElementById('expenseName').value = '';
       document.getElementById('expenseAmount').value = '';
+      document.getElementById('expenseBillImage').value = '';
       shareState.expense = {};
       renderSharePicker('expense');
       document.getElementById('expenseFormTitle').textContent = '💰 Ghi Chi Phí';
@@ -2120,7 +2331,7 @@
 
     function addFund() {
       const member = document.getElementById('fundMember').value;
-      const amount = parseFloat(document.getElementById('fundAmount').value);
+      const amount = getAmountValue('fundAmount');
       const file = document.getElementById('fundBillImage').files[0];
 
       if (!member) { alert('Chọn thành viên'); return; }
@@ -2175,7 +2386,7 @@
 
       editingFundId = id;
       document.getElementById('fundMember').value = tx.member;
-      document.getElementById('fundAmount').value = tx.amount;
+      setAmountValue('fundAmount', tx.amount);
       document.getElementById('fundBillImage').value = '';
       document.getElementById('fundFormTitle').textContent = '✏️ Sửa Lần Nạp Quỹ';
       document.getElementById('fundSubmitBtn').textContent = '💾 Lưu Thay Đổi';
@@ -2232,67 +2443,10 @@
       });
     }
 
-    function uploadBill() {
-      const file = document.getElementById('billImage').files[0];
-      const name = document.getElementById('billExpenseName').value.trim() || 'Bill';
-      const amount = parseFloat(document.getElementById('billAmount').value);
-      const state = shareState.bill;
-      const names = Object.keys(state);
-
-      if (!file) { alert('Chọn hoặc chụp ảnh bill'); return; }
-      if (!amount || amount <= 0) { alert('Nhập tiền'); return; }
-      if (names.length === 0) { alert('Chọn người tham gia'); return; }
-
-      const totalShares = names.reduce((s, n) => s + state[n], 0);
-      const perShare = amount / totalShares;
-      const participantsDetail = names.map(n => ({
-        name: n,
-        shares: state[n],
-        amount: perShare * state[n]
-      }));
-
-      const reader = new FileReader();
-      reader.onload = e => {
-        const image = e.target.result;
-        const id = Date.now().toString();
-
-        allData.expenses.push({
-          id,
-          name, amount,
-          participants: participantsDetail,
-          totalShares,
-          perShare,
-          image,
-          date: new Date().toLocaleDateString('vi-VN')
-        });
-
-        allData.bills.push({
-          id,
-          image,
-          amount,
-          name,
-          date: new Date().toLocaleString('vi-VN')
-        });
-
-        allData.history.push({
-          id: Date.now() + 'b',
-          type: 'bill', name, amount,
-          participants: participantsDetail.map(pd => pd.shares > 1 ? `${pd.name} x${pd.shares}` : pd.name),
-          date: new Date().toLocaleString('vi-VN')
-        });
-
-        document.getElementById('billImage').value = '';
-        document.getElementById('billExpenseName').value = '';
-        document.getElementById('billAmount').value = '';
-        shareState.bill = {};
-        recomputeFunds();
-        saveData();
-        updateUI();
-      };
-      reader.readAsDataURL(file);
-    }
-
-    window.addEventListener('DOMContentLoaded', initFirebase);
+    window.addEventListener('DOMContentLoaded', () => {
+      initInputFormatting();
+      initFirebase();
+    });
   </script>
 </body>
 </html>
