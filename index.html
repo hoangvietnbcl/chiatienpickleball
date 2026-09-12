@@ -350,6 +350,15 @@
       margin-bottom: 0.5rem;
     }
 
+    .photo-source-row {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .hidden-file-input {
+      display: none;
+    }
+
     /* Stats */
     .stats-grid {
       display: grid;
@@ -1109,8 +1118,16 @@
             <option value="">-- Chọn thành viên --</option>
           </select>
           <input type="text" id="fundAmount" placeholder="Số tiền (VD: 100,000)" inputmode="numeric">
-          <input type="file" id="fundBillImage" accept="image/*" capture="environment">
-          <p class="share-hint">💡 Đính kèm ảnh chuyển khoản/bill làm bằng chứng nạp quỹ (không bắt buộc).</p>
+          <div>
+            <label style="font-size: 13px; font-weight: 600; color: #6b7280; display: block; margin-bottom: 0.5rem;">📸 Đính kèm ảnh chuyển khoản/bill (không bắt buộc):</label>
+            <div class="photo-source-row">
+              <button type="button" class="btn btn-secondary" style="flex: 1; justify-content: center;" onclick="document.getElementById('fundBillImageGallery').click()">🖼️ Thư Viện</button>
+              <button type="button" class="btn btn-secondary" style="flex: 1; justify-content: center;" onclick="document.getElementById('fundBillImageCamera').click()">📷 Chụp Ảnh</button>
+            </div>
+            <input type="file" id="fundBillImageGallery" accept="image/*" class="hidden-file-input" onchange="handleFundFileSelected(this)">
+            <input type="file" id="fundBillImageCamera" accept="image/*" capture="environment" class="hidden-file-input" onchange="handleFundFileSelected(this)">
+            <p class="share-hint" id="fundImageInfo"></p>
+          </div>
           <div style="display: flex; gap: 0.75rem;">
             <button class="btn btn-success" id="fundSubmitBtn" onclick="addFund()" style="flex: 1; justify-content: center;">Nạp</button>
             <button class="btn btn-secondary hidden" id="fundCancelEditBtn" onclick="cancelEditFund()" style="flex: 1; justify-content: center;">Hủy Sửa</button>
@@ -1138,7 +1155,13 @@
           </div>
           <div>
             <label style="font-size: 13px; font-weight: 600; color: #6b7280; display: block; margin-bottom: 0.5rem;">📸 Đính kèm ảnh bill (không bắt buộc):</label>
-            <input type="file" id="expenseBillImage" accept="image/*" capture="environment">
+            <div class="photo-source-row">
+              <button type="button" class="btn btn-secondary" style="flex: 1; justify-content: center;" onclick="document.getElementById('expenseBillImageGallery').click()">🖼️ Thư Viện</button>
+              <button type="button" class="btn btn-secondary" style="flex: 1; justify-content: center;" onclick="document.getElementById('expenseBillImageCamera').click()">📷 Chụp Ảnh</button>
+            </div>
+            <input type="file" id="expenseBillImageGallery" accept="image/*" class="hidden-file-input" onchange="handleExpenseFileSelected(this)">
+            <input type="file" id="expenseBillImageCamera" accept="image/*" capture="environment" class="hidden-file-input" onchange="handleExpenseFileSelected(this)">
+            <p class="share-hint" id="expenseImageInfo"></p>
           </div>
           <div style="display: flex; gap: 0.75rem;">
             <button class="btn btn-success" id="expenseSubmitBtn" onclick="addExpense()" style="flex: 1; justify-content: center;">💾 Thêm Chi Phí</button>
@@ -1194,8 +1217,14 @@
       <div class="card">
         <div class="card-title">📤 Đăng Ảnh Nhóm</div>
         <div class="form-group-full">
-          <input type="file" id="albumPhotoInput" accept="image/*" multiple capture="environment">
-          <p class="share-hint">💡 Có thể chọn nhiều ảnh cùng lúc. Ảnh sẽ tự động được nén để tiết kiệm dung lượng.</p>
+          <div class="photo-source-row">
+            <button type="button" class="btn btn-secondary" style="flex: 1; justify-content: center;" onclick="document.getElementById('albumPhotoInputGallery').click()">🖼️ Chọn Từ Thư Viện</button>
+            <button type="button" class="btn btn-secondary" style="flex: 1; justify-content: center;" onclick="document.getElementById('albumPhotoInputCamera').click()">📷 Chụp Ảnh</button>
+          </div>
+          <input type="file" id="albumPhotoInputGallery" accept="image/*" multiple class="hidden-file-input" onchange="handleAlbumFilesSelected(this)">
+          <input type="file" id="albumPhotoInputCamera" accept="image/*" capture="environment" class="hidden-file-input" onchange="handleAlbumFilesSelected(this)">
+          <p class="share-hint" id="albumSelectedInfo"></p>
+          <p class="share-hint">💡 Có thể chọn nhiều ảnh cùng lúc từ thư viện. Ảnh sẽ tự động được nén để tiết kiệm dung lượng.</p>
           <input type="text" id="albumPhotoCaption" placeholder="Chú thích cho ảnh (không bắt buộc)">
           <button class="btn btn-primary" id="albumUploadBtn" onclick="uploadAlbumPhotos()" style="width: 100%;">📤 Tải Ảnh Lên</button>
           <p class="share-hint" id="albumUploadStatus"></p>
@@ -1318,6 +1347,8 @@
     // Sửa khoản đã nhập (chi phí / nạp quỹ)
     let editingExpenseId = null;
     let editingFundId = null;
+    let expenseSelectedFile = null;
+    let fundSelectedFile = null;
 
     // Avatar thành viên
     let currentAvatarMemberName = '';
@@ -1766,8 +1797,9 @@
         tag.className = 'tag';
         tag.innerHTML = `
           <span class="member-avatar" onclick="openMemberAvatarModal('${m}')" title="Đổi ảnh đại diện">${renderAvatarHtml(avatar)}</span>
-          <span>${escapeHtml(m)}</span>
-          <span class="tag-remove" onclick="removeMember('${m}')">✕</span>
+          <span class="tag-name" onclick="renameMember('${m}')" title="Đổi tên">${escapeHtml(m)}</span>
+          <span class="tag-remove" onclick="renameMember('${m}')" title="Đổi tên">✏️</span>
+          <span class="tag-remove" onclick="removeMember('${m}')" title="Xóa">✕</span>
         `;
         list.appendChild(tag);
       });
@@ -2034,9 +2066,24 @@
     }
 
     // ===== Đăng nhiều ảnh nhóm cùng lúc (Thư Viện) =====
-    async function uploadAlbumPhotos() {
-      const input = document.getElementById('albumPhotoInput');
+    // ===== Chọn ảnh từ 2 nguồn (thư viện / chụp ảnh) trước khi đăng =====
+    let albumSelectedFiles = [];
+
+    function handleAlbumFilesSelected(input) {
       const files = Array.from(input.files || []);
+      albumSelectedFiles = albumSelectedFiles.concat(files);
+      input.value = ''; // reset để lần sau vẫn chọn lại được ảnh, hoặc mở nguồn còn lại
+      updateAlbumSelectedInfo();
+    }
+
+    function updateAlbumSelectedInfo() {
+      const info = document.getElementById('albumSelectedInfo');
+      if (!info) return;
+      info.textContent = albumSelectedFiles.length > 0 ? `📎 Đã chọn ${albumSelectedFiles.length} ảnh` : '';
+    }
+
+    async function uploadAlbumPhotos() {
+      const files = albumSelectedFiles;
       const caption = document.getElementById('albumPhotoCaption').value.trim();
       const statusEl = document.getElementById('albumUploadStatus');
       const btn = document.getElementById('albumUploadBtn');
@@ -2064,7 +2111,8 @@
       }
 
       statusEl.textContent = `✅ Đã tải lên ${files.length} ảnh!`;
-      input.value = '';
+      albumSelectedFiles = [];
+      updateAlbumSelectedInfo();
       document.getElementById('albumPhotoCaption').value = '';
       btn.disabled = false;
       saveData();
@@ -2400,10 +2448,96 @@
       }
     }
 
+    function renameMember(oldName) {
+      const input = prompt('Đổi tên thành viên:', oldName);
+      if (input === null) return; // hủy
+      const newName = input.trim();
+      if (!newName) { alert('Tên không được để trống'); return; }
+      if (newName === oldName) return;
+      if (allData.participants.includes(newName)) {
+        alert('Đã có thành viên tên này rồi');
+        return;
+      }
+
+      // 1. Danh sách thành viên
+      allData.participants = allData.participants.map(p => p === oldName ? newName : p);
+
+      // 2. Ảnh đại diện
+      if (allData.memberAvatars && Object.prototype.hasOwnProperty.call(allData.memberAvatars, oldName)) {
+        allData.memberAvatars[newName] = allData.memberAvatars[oldName];
+        delete allData.memberAvatars[oldName];
+      }
+
+      // 3. Các lần nạp quỹ
+      (allData.fundTransactions || []).forEach(t => {
+        if (t.member === oldName) t.member = newName;
+      });
+
+      // 4. Các khoản chi phí (bao gồm cả bill đính kèm)
+      (allData.expenses || []).forEach(e => {
+        if (!Array.isArray(e.participants)) return;
+        e.participants = e.participants.map(pd => {
+          if (pd && typeof pd === 'object') {
+            return pd.name === oldName ? { ...pd, name: newName } : pd;
+          }
+          return pd === oldName ? newName : pd;
+        });
+      });
+
+      // 5. Lịch sử giao dịch (đổi tên trong các dòng log cũ để nhất quán)
+      (allData.history || []).forEach(h => {
+        if (h.member === oldName) h.member = newName;
+        if (Array.isArray(h.participants)) {
+          h.participants = h.participants.map(p => {
+            if (p === oldName) return newName;
+            if (p.startsWith(oldName + ' x')) return newName + p.slice(oldName.length);
+            return p;
+          });
+        }
+      });
+
+      // 6. Trạng thái đang chọn dở trong form Chi Phí (nếu có)
+      if (Object.prototype.hasOwnProperty.call(shareState.expense, oldName)) {
+        shareState.expense[newName] = shareState.expense[oldName];
+        delete shareState.expense[oldName];
+      }
+
+      recomputeFunds();
+      saveData();
+      updateUI();
+    }
+
+    // ===== Chọn ảnh bill từ 2 nguồn (thư viện / chụp ảnh) - dùng cho Chi Phí & Quỹ =====
+    function handleExpenseFileSelected(input) {
+      const file = input.files[0];
+      if (file) expenseSelectedFile = file;
+      input.value = ''; // cho phép chọn lại cùng ảnh hoặc mở lại nguồn còn lại
+      updateExpenseImageInfo();
+    }
+
+    function updateExpenseImageInfo() {
+      const el = document.getElementById('expenseImageInfo');
+      if (!el) return;
+      el.textContent = expenseSelectedFile ? `📎 Đã chọn: ${expenseSelectedFile.name}` : '';
+    }
+
+    function handleFundFileSelected(input) {
+      const file = input.files[0];
+      if (file) fundSelectedFile = file;
+      input.value = '';
+      updateFundImageInfo();
+    }
+
+    function updateFundImageInfo() {
+      const el = document.getElementById('fundImageInfo');
+      if (!el) return;
+      el.textContent = fundSelectedFile ? `📎 Đã chọn: ${fundSelectedFile.name}` : '';
+    }
+
     function addExpense() {
       const name = document.getElementById('expenseName').value.trim();
       const amount = getAmountValue('expenseAmount');
-      const file = document.getElementById('expenseBillImage').files[0];
+      const file = expenseSelectedFile;
       const state = shareState.expense;
       const names = Object.keys(state);
 
@@ -2492,7 +2626,8 @@
       editingExpenseId = id;
       document.getElementById('expenseName').value = exp.name;
       setAmountValue('expenseAmount', exp.amount);
-      document.getElementById('expenseBillImage').value = '';
+      expenseSelectedFile = null;
+      updateExpenseImageInfo();
 
       shareState.expense = {};
       (exp.participants || []).forEach(pd => {
@@ -2518,7 +2653,8 @@
     function resetExpenseForm() {
       document.getElementById('expenseName').value = '';
       document.getElementById('expenseAmount').value = '';
-      document.getElementById('expenseBillImage').value = '';
+      expenseSelectedFile = null;
+      updateExpenseImageInfo();
       shareState.expense = {};
       renderSharePicker('expense');
       document.getElementById('expenseFormTitle').textContent = '💰 Ghi Chi Phí';
@@ -2540,7 +2676,7 @@
     function addFund() {
       const member = document.getElementById('fundMember').value;
       const amount = getAmountValue('fundAmount');
-      const file = document.getElementById('fundBillImage').files[0];
+      const file = fundSelectedFile;
 
       if (!member) { alert('Chọn thành viên'); return; }
       if (!amount || amount <= 0) { alert('Nhập tiền'); return; }
@@ -2593,7 +2729,8 @@
       editingFundId = id;
       document.getElementById('fundMember').value = tx.member;
       setAmountValue('fundAmount', tx.amount);
-      document.getElementById('fundBillImage').value = '';
+      fundSelectedFile = null;
+      updateFundImageInfo();
       document.getElementById('fundFormTitle').textContent = '✏️ Sửa Lần Nạp Quỹ';
       document.getElementById('fundSubmitBtn').textContent = '💾 Lưu Thay Đổi';
       document.getElementById('fundCancelEditBtn').classList.remove('hidden');
@@ -2608,7 +2745,8 @@
     function resetFundForm() {
       document.getElementById('fundAmount').value = '';
       document.getElementById('fundMember').value = '';
-      document.getElementById('fundBillImage').value = '';
+      fundSelectedFile = null;
+      updateFundImageInfo();
       document.getElementById('fundFormTitle').textContent = '➕ Nạp Tiền Vào Quỹ';
       document.getElementById('fundSubmitBtn').textContent = 'Nạp';
       document.getElementById('fundCancelEditBtn').classList.add('hidden');
